@@ -294,7 +294,35 @@ class pixel_MRF(MRF):
 
 		return energy
 
+class SecondOrderMRF(MRF):
+	def __init__(self,*args):
+		super.__init__(*args)
+		self.check_arrays = [
+		[[1,0,0],
+		 [0,1,0],
+		 [0,0,1]],
+		[[0,1,0],
+		 [0,1,0],
+		 [0,1,0]],
+		[[0,0,1],
+		 [0,1,0],
+		 [1,0,0]],
+		[[0,0,0],
+		 [1,1,1],
+		 [0,0,0]]
+		]
 
+	def doubleton(self, i, j, label):
+		i_start, i_end = max(0,i-1), min(i+1,self.image.height)
+		j_start, j_end = max(0,j-1), min(j+1,self.image.width)
+
+		masked_label_array = self.labels[i_start:i_end,j_start:j_end] == label
+		masked_label_array[1,1] = True
+		# this will be True if the labels all match one of the check arrays
+		check = max([np.all(masked_label_array==ca) for ca in check_arrays])
+		if check:
+			return -1
+		return 1
 
 #
 #
