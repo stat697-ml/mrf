@@ -2,13 +2,13 @@ import numpy as np
 from random import randint
 import random
 from scipy import stats
-from mrf_3d import Image
+#from mrf_3d import Image
 from scipy import misc
 import math
 import pdb
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-from numba import jit
+#from numba import jit
 sd = 1
 np.random.seed(sd)
 random.seed(sd)
@@ -80,16 +80,17 @@ class GaussianMixtureModel(object):
 	# 			log_arg = 0
 	# 			for k in range(self.K):
 	# 				log_arg+= pi[k](math.log(pi[k]) - math.log
-	# @profile
+	#@profile
 	def estimate_parameters(self, max_iter):
 		i = 0
 		pi_est = self.pi
 		mu_est = self.mu
 		sigma_est = self.sigma
 		while i < max_iter:
+			print(i)
 			# print(pi_est)
-			# print(mu_est)
-			# print(sigma_est)
+			print(mu_est)
+			print(sigma_est)
 			gamma_z = self.E_step(pi_est, mu_est, sigma_est)
 			# pdb.set_trace()
 			[pi_est, mu_est, sigma_est] = self.M_step(gamma_z)
@@ -103,7 +104,7 @@ class GaussianMixtureModel(object):
 if __name__ == '__main__':   
     #### Main Code ####
     NN = 30
-    K = 2
+    K = 4
     # m = [0,0]
     # sigma = [0,0]
     # m[0] = (np.array([4,4]))
