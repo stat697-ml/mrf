@@ -30,7 +30,7 @@ class Image():
 		# self._data = img_as_float(self._data) # lab already normalized??
 		self._data = random_noise(self._data)
 		self._data = self._data[:,:,0:3]
-		#self._data = misc.imresize(self._data,0.5)/255
+		self._data = misc.imresize(self._data,0.1)/255
 
 		(self.height, self.width, self.bitdepth) = self._data.shape
 
@@ -296,7 +296,7 @@ class pixel_MRF(MRF):
 
 class SecondOrderMRF(MRF):
 	def __init__(self,*args):
-		super.__init__(*args)
+		super(SecondOrderMRF,self).__init__(*args)
 		self.check_arrays = [
 		[[1,0,0],
 		 [0,1,0],
@@ -309,17 +309,20 @@ class SecondOrderMRF(MRF):
 		 [1,0,0]],
 		[[0,0,0],
 		 [1,1,1],
-		 [0,0,0]]
+		 [0,0,0]],
+		 [[1,1,1],
+		  [1,1,1],
+		  [1,1,1]]
 		]
 
 	def doubleton(self, i, j, label):
 		i_start, i_end = max(0,i-1), min(i+1,self.image.height)
 		j_start, j_end = max(0,j-1), min(j+1,self.image.width)
 
-		masked_label_array = self.labels[i_start:i_end,j_start:j_end] == label
+		masked_label_array = self.labels[i_start:i_end+1,j_start:j_end+1] == label
 		masked_label_array[1,1] = True
 		# this will be True if the labels all match one of the check arrays
-		check = max([np.all(masked_label_array==ca) for ca in check_arrays])
+		check = max([np.all(masked_label_array==ca) for ca in self.check_arrays])
 		if check:
 			return -1
 		return 1
@@ -349,9 +352,9 @@ class SecondOrderMRF(MRF):
 
 if __name__ == '__main__':
 	import matplotlib.pyplot as plt
-	K = 3
+	K = 6
 	# test_img = Image() # should raise error
-	test_img = Image('./pattern.png')#Image('./test_resized_2.jpg')
+	test_img = Image('./watershed.png')#Image('./test_resized_2.jpg')
 
 	# means = [np.array([random.uniform(0,1),random.uniform(0,1),random.uniform(0,1) ]) for _ in range(K)]
 	# means = [np.array([1/k,1/k,1/k]) for k in range(1,K+1)]
@@ -369,8 +372,9 @@ if __name__ == '__main__':
 	# init_sigma = [np.matrix([[1000.0, 0.0, 0.0], [0.0, 157.0, 0.0], [0.0, 0.0, 1.0]]) for _ in range(3)]
 
 	[pi_est, means, not_variances] = test_gmm.estimate_parameters(25)
+	test_mrf = SecondOrderMRF(test_img,means,variances)
 
-	test_mrf = fisher2_MRF(test_img,means,variances)
+	# test_mrf = fisher2_MRF(test_img,means,variances)
 	# test_mrf.doubleton = new_doubleton
 	plt.imshow(test_mrf.labels)
 	# plt.show()
@@ -387,3 +391,13 @@ if __name__ == '__main__':
 	plt.savefig('real_means.png',cmap='gist_gray_r')
 	# plt.savefig('after_gibbs.png',cmap='gist_gray_r')
 	# lol, for my 640 x 425 px image this code took 140 seconds to run on my desktop
+
+#scikit learn code
+# from sklearn.mixture import GaussianMixture
+# test_img = io.imread('./test_resized_2.jpg')
+# # change full to 'diag' for diagonal covariance
+# test_gmm = GaussianMixture(3,'full',init_params='random',verbose=1)
+# d2_array = np.reshape(np.ravel(test_img),(test_img.shape[0]*test_img.shape[1],test_img.shape[2]))
+# res = test_gmm.fit(d2_array)
+# print(res.means_)
+# print(res.covariances_)
