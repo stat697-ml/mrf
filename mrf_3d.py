@@ -30,7 +30,7 @@ class Image():
 		# self._data = img_as_float(self._data) # lab already normalized??
 		self._data = random_noise(self._data)
 		self._data = self._data[:,:,0:3]
-		#self._data = misc.imresize(self._data,0.5)/255
+		self._data = misc.imresize(self._data,0.1)/255
 
 		(self.height, self.width, self.bitdepth) = self._data.shape
 
@@ -268,8 +268,8 @@ class fisher2_MRF(MRF):
 					i + dy >= 0,
 					j + dx < self.image.width,
 					j + dx >= 0]):
-				sig = np.matrix(self.variances[label] + self.variances[self.labels[i + dy, j + dx]])
-				fisher = (self.means[label] - self.means[self.labels[i + dy, j + dx]]) * np.matrix(self.means[label] - self.means[self.labels[i + dy, j + dx]]).T  # *np.linalg.inv(sig)*np.matrix(self.means[label] - self.means[self.labels[i+dy,j+dx]]).T
+				# sig = np.matrix(self.variances[label] + self.variances[self.labels[i + dy, j + dx]])
+				# fisher = (self.means[label] - self.means[self.labels[i + dy, j + dx]]) * np.matrix(self.means[label] - self.means[self.labels[i + dy, j + dx]]).T  # *np.linalg.inv(sig)*np.matrix(self.means[label] - self.means[self.labels[i+dy,j+dx]]).T
 				# print(fisher)
 				if label == self.labels[i+dy,j+dx]:
 					energy += -beta+alpha*(self.image[i,j]-self.image[i+dy,j+dx])*np.matrix(self.image[i,j]-self.image[i+dy,j+dx]).T
@@ -321,9 +321,9 @@ class pixel_MRF(MRF):
 
 if __name__ == '__main__':
 	import matplotlib.pyplot as plt
-	K = 3
+	K = 1
 	# test_img = Image() # should raise error
-	test_img = Image('./pattern.png')#Image('./test_resized_2.jpg')
+	test_img = Image('./watershed.png')#Image('./test_resized_2.jpg')
 
 	# means = [np.array([random.uniform(0,1),random.uniform(0,1),random.uniform(0,1) ]) for _ in range(K)]
 	# means = [np.array([1/k,1/k,1/k]) for k in range(1,K+1)]

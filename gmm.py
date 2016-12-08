@@ -64,13 +64,16 @@ class GaussianMixtureModel(object):
 					# pdb.set_trace()
 					mu_new[k] += gamma_z[i, j, k] * self.data[i, j] / N[k]
 
-		sigma_new = [np.matrix([[0.0, 0, 0], [0.0, 0, 0], [0.0, 0, 0]]) for _ in range(self.K)]
+		sigma_new = np.array([[0,0,0] for _ in range(self.K)])
 		for i in range(self.data.height):  # TODO:vectorize
 			for j in range(self.data.width):
 				diffs = [np.matrix(self.data[i, j] - mu_new[k]) for k in range(self.K)]
 				for k in range(self.K):
-					sigma_new[k] += gamma_z[i, j, k] * diffs[k].T*(diffs[k]) / N[k]
-		return [pi_new, mu_new, sigma_new]
+					sigma_new[k][0] += gamma_z[i, j, k] * (diffs[k][0] ** 2) / N[k]
+					sigma_new[k][1] += gamma_z[i, j, k] * (diffs[k][1] ** 2) / N[k]
+					sigma_new[k][2] += gamma_z[i, j, k] * (diffs[k][2] ** 2) / N[k]
+
+		return [pi_new, mu_new, [sigma_new[k]*np.eye(3) for k in range(self.K)]]
 
 	# def likelihood(self,gamma_z,pi,mu,sigma):
 	# 	total = 0;
