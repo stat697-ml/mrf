@@ -87,6 +87,10 @@ class Drawer(pyglet.window.Window):
 		self.draw_ellipse(center_x-radius,center_y-radius,center_x+radius,center_y+radius,color)
 
 if __name__ == '__main__': 
+	import os
+	if not os.path.exists('./scrot'):
+	    os.makedirs('./scrot')
+	    
 	window = Drawer(500, 500,True)
 	rsg = RandomShapeGenerator(500,500)
 	
