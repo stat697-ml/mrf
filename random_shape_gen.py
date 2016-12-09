@@ -57,7 +57,14 @@ class Shape():
 
 	def get_mask(self,total_height,total_width):
 		to_return = np.zeros((total_height, total_width))
-		to_return[self.bot:self.top,self.left:self.right] = 1
+		if self.shape_type in ['Rectangle','Square']:
+			to_return[self.bot:self.top,self.left:self.right] = 1
+		elif self.shape_type in ['Ellipse','Circle']:
+			x, y = np.meshgrid(np.arange(total_width), np.arange(total_height))
+			c, wh = self.center, self.width_height
+			x -= c[0]
+			y -= c[1]
+			to_return = ((x * x)/(wh[0]**2)*4 + (y * y)/(wh[1]**2)*4 < 1)
 		return np.flipud(to_return)
 
 	def __str__(self):
@@ -146,7 +153,8 @@ if __name__ == '__main__':
 	truth_test.get_truth('./scrot/0.txt')
 	# for s in truth_test.shapes:
 	# 	print(s)
-	r = truth_test.get_shape(375,125)
+	r = truth_test.get_shape(50,50)
+	# r = truth_test.shapes[0]
 	print(r)
 	if r is not None:
 		import matplotlib.pyplot as plt
