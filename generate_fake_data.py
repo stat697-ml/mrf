@@ -5,7 +5,7 @@ from PIL import Image
 import random, math
 
 from random_shape_gen import RandomShapeGenerator
-
+size=50
 class CustomGroup(pyglet.graphics.Group):
 	def set_state(self):
 		gl.glEnable(gl.GL_TEXTURE_2D)
@@ -14,7 +14,7 @@ class CustomGroup(pyglet.graphics.Group):
 		gl.glDisable(gl.GL_TEXTURE_2D)
 
 class Drawer(pyglet.window.Window):
-	def __init__(self, x=500,y=500,visible=False):
+	def __init__(self, x=size,y=size,visible=False):
 		super(Drawer, self).__init__(x,y)
 		self.set_visible(visible)
 		gl.glEnable(gl.GL_BLEND)

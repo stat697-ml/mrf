@@ -5,8 +5,10 @@ from scipy import misc
 from skimage import io, img_as_float, color
 from skimage.exposure import equalize_hist
 from skimage.util import random_noise
+from sklearn.mixture import GaussianMixture
+from skimage.filters import gaussian
 
-from gmm import GaussianMixtureModel as oliver_gmm
+# from gmm import GaussianMixtureModel as oliver_gmm
 
 class Image():
 	"""
@@ -28,8 +30,11 @@ class Image():
 		# self._data = color.rgb2lab(self._data)
 		# if self._data.ndim > 2:
 		# 	self._data = equalize_hist(color.rgb2gray(self._data)) # convert to grayscale
-		self._data = self._data[:,:,0:3]
-		self._data = img_as_float(self._data) 
+		# self._data = img_as_float(self._data) # lab already normalized??
+		self._data = random_noise(self._data,mode='pepper',amount=0.1,seed=1234)
+		# self._data = gaussian(self._data,sigma=0.05)
+		self._data = self._data[:,:,0:3]/255
+		#self._data = misc.imresize(self._data,1.0)#/255
 
 		if pepper:
 			self._data = random_noise(self._data) # pepper
@@ -163,7 +168,7 @@ class MRF():
 
 
 
-	def icm(self, thresh=0.0000005):
+	def icm(self, thresh=0.00000000000005):
 		# basically loop through everything picking minimizing labeling until "convergence"
 		if self.verbose: print("icm")
 		E_old = self.global_energy()
@@ -271,8 +276,8 @@ class hard_boundary_MRF(MRF):
 class fisher2_MRF(MRF):
 	def doubleton(self, i, j, label):
 		energy = 0.0
-		alpha = 10
-		beta = 1
+		alpha = 2
+		beta = 2
 		for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
 			if all([i + dy < self.image.height,
 					i + dy >= 0,
@@ -285,7 +290,7 @@ class fisher2_MRF(MRF):
 					energy += -beta+alpha*(self.image[i,j]-self.image[i+dy,j+dx])*np.matrix(self.image[i,j]-self.image[i+dy,j+dx]).T
 				else:
 
-					energy += beta
+					energy += beta*10
 		return energy
 
 class pixel_MRF(MRF):
@@ -333,9 +338,10 @@ class SecondOrderMRF(MRF):
 		masked_label_array[1,1] = True
 		# this will be True if the labels all match one of the check arrays
 		check = max([np.all(masked_label_array==ca) for ca in self.check_arrays])
+		beta = 5
 		if check:
-			return -1
-		return 1
+			return -beta
+		return beta
 
 #
 #
@@ -362,14 +368,10 @@ class SecondOrderMRF(MRF):
 
 if __name__ == '__main__':
 	import matplotlib.pyplot as plt
-<<<<<<< HEAD
-	K = 1
-=======
-	K = 6
->>>>>>> 3a92203d78331d7f16a5a9e1f90b0ae7c7a71e88
+	K = 7
 	# test_img = Image() # should raise error
 	test_img = Image('./watershed.png')#Image('./test_resized_2.jpg')
-
+	# test_img = io.imread('./watershed.png')
 	# means = [np.array([random.uniform(0,1),random.uniform(0,1),random.uniform(0,1) ]) for _ in range(K)]
 	# means = [np.array([1/k,1/k,1/k]) for k in range(1,K+1)]
 	variances = [ np.eye(3)] * K#random.uniform(1,2) *
@@ -378,15 +380,18 @@ if __name__ == '__main__':
 	 ### this is how i interface w/ ur code
 	# # #
 
-	test_gmm = oliver_gmm(test_img,K)
+	# test_gmm = oliver_gmm(test_img,K)
+	test_gmm = GaussianMixture(K,'diag',init_params='random',verbose=1)
+	d2_array = np.reshape(np.ravel(test_img._data),(test_img._data.shape[0]*test_img._data.shape[1],test_img._data.shape[2]))
+	res = test_gmm.fit(d2_array)
 	# plt.imshow(test_img._data)
 	# plt.show()
 	# init_pi = [0.33, 0.33, 0.34]
 	# init_mu = [np.array([0.5, 0.5, 0.5])]*3
 	# init_sigma = [np.matrix([[1000.0, 0.0, 0.0], [0.0, 157.0, 0.0], [0.0, 0.0, 1.0]]) for _ in range(3)]
 
-	[pi_est, means, not_variances] = test_gmm.estimate_parameters(25)
-	test_mrf = SecondOrderMRF(test_img,means,variances)
+	# [pi_est, means, not_variances] = test_gmm.estimate_parameters(25)
+	test_mrf = SecondOrderMRF(test_img, res.means_, [np.eye(3)*res.covariances_[i] for i in range(K)])
 
 	# test_mrf = fisher2_MRF(test_img,means,variances)
 	# test_mrf.doubleton = new_doubleton
