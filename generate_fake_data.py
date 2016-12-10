@@ -87,13 +87,7 @@ class Drawer(pyglet.window.Window):
 		self.draw_ellipse(center_x-radius,center_y-radius,center_x+radius,center_y+radius,color)
 
 if __name__ == '__main__': 
-	import os
-	if not os.path.exists('./scrot'):
-	    os.makedirs('./scrot')
-	    
-	window = Drawer(500, 500,True)
-	rsg = RandomShapeGenerator(500,500)
-	
+
 	# window.save_drawing('ttt.png')
 	# window.draw_rect(100,300,200,100,(255,0,0))
 	# window.draw_square(350,75,100,(128,128,0))
@@ -115,6 +109,15 @@ if __name__ == '__main__':
 	# def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
 	#     pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', [x, y, x-dx, y, x-dx, y-dy, x, y-dy]))
 	# pyglet.image.get_buffer_manager().get_color_buffer().save('screenshot.png')
+
+	import os
+	if not os.path.exists('./scrot'):
+	    os.makedirs('./scrot')
+
+	window = Drawer(200, 125,False)
+	rsg = RandomShapeGenerator(200,125)
+	
+
 	counter = 0
 	def test(val):
 		global counter

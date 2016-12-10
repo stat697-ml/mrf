@@ -33,6 +33,8 @@ class MultiShapeHolder():
 	
 
 class Shape():
+	### note.. going to have to do mess with y_vals when doing testing comparing to truth
+	# stupid open_gl coord system not agreeing with image coords lol
 	def __init__(self,left,top,right,bot,shape_type=None,color=None):
 		self.left, self.top, self.right, self.bot = left, top, right, bot
 		self.shape_type = shape_type
@@ -55,10 +57,19 @@ class Shape():
 		# returns whether a pixel is inside of the shape
 		return (self.bot <= i <= self.top) and (self.left <= j <= self.right)
 
-	def get_mask(self,total_height,total_width):
+	def get_mask(self,total_height,total_width,flip=False):
+		# only have to flip if got the coords from truth :v)
 		to_return = np.zeros((total_height, total_width))
-		to_return[self.bot:self.top,self.left:self.right] = 1
-		return np.flipud(to_return)
+		if self.shape_type in ['Rectangle','Square']:
+			to_return[self.bot:self.top,self.left:self.right] = 1
+		elif self.shape_type in ['Ellipse','Circle']:
+			x, y = np.meshgrid(np.arange(total_width), np.arange(total_height))
+			c, wh = self.center, self.width_height
+			x -= c[0]
+			y -= c[1]
+			to_return = ((x * x)/(wh[0]**2)*4 + (y * y)/(wh[1]**2)*4 < 1)
+		if flip: to_return =  np.flipud(to_return)
+		return to_return
 
 	def __str__(self):
 		if self.shape_type is None:
@@ -73,7 +84,6 @@ class Shape():
 class RandomShapeGenerator():
 	def __init__(self,width,height):
 		self.total_width, self.total_height = width, height
-		
 
 	def generate_random_shapes(self,k):
 		self.k = k
@@ -142,15 +152,16 @@ if __name__ == '__main__':
 	# 	if test_rsg.grid_pops[i//3][i%3]:
 	# 		print(s)
 
-	truth_test = MultiShapeHolder(500,500)
+	truth_test = MultiShapeHolder(100,200)
 	truth_test.get_truth('./scrot/0.txt')
 	# for s in truth_test.shapes:
 	# 	print(s)
-	r = truth_test.get_shape(375,125)
+	r = truth_test.get_shape(50,50)
+	# r = truth_test.shapes[0]
 	print(r)
 	if r is not None:
 		import matplotlib.pyplot as plt
 
-		mask = r.get_mask(500,500)
+		mask = r.get_mask(100,200)
 		plt.imshow(mask)
 		plt.savefig('mask.png')
