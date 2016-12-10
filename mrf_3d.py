@@ -13,8 +13,9 @@ class Image():
 	holds a picture
 	can either supply a filename or
 	data as a numpy array
+	scale param = how many times to scale image down (default of 10 will make image that is 10 times smaller)
 	"""
-	def __init__(self, filename=None, data=None):
+	def __init__(self, filename=None, data=None,pepper=True,scale=10):
 		assert any([filename is not None, data is not None]), "you need to supply an image file or pass a picture array"
 
 		if filename is not None:
@@ -27,10 +28,14 @@ class Image():
 		# self._data = color.rgb2lab(self._data)
 		# if self._data.ndim > 2:
 		# 	self._data = equalize_hist(color.rgb2gray(self._data)) # convert to grayscale
-		# self._data = img_as_float(self._data) # lab already normalized??
-		self._data = random_noise(self._data)
 		self._data = self._data[:,:,0:3]
-		self._data = misc.imresize(self._data,0.1)/255
+		self._data = img_as_float(self._data) 
+
+		if pepper:
+			self._data = random_noise(self._data) # pepper
+
+		if scale > 1:
+			self._data = misc.imresize(self._data,1.0/scale)
 
 		(self.height, self.width, self.bitdepth) = self._data.shape
 
@@ -43,16 +48,25 @@ class Image():
 
 
 class MRF():
-	def __init__(self, image, means, variances):
+	def __init__(self, image, means, variances,verbose=False):
+		self.verbose = verbose
 		# mean, var comes from gmm
 		self.image = image
 		self.indices = self.image.indices
-		self.means, self.variances = means, variances
+
+		self.means = means
+
+		# convert diagonal covariance matrices to full
+		def diag_to_full(cov):
+		    if cov.ndim == 2: return cov
+		    return np.eye(3) * cov
+
+		self.variances = [diag_to_full(v) for v in variances]
 		self.no_classes = len(means)
 
 		# precalculate determinants and inverses for the variances
-		self.var_dets = [np.linalg.det(variances[k]) for k in range(self.no_classes)]
-		self.var_invs = [np.linalg.inv(variances[k]) for k in range(self.no_classes)]
+		self.var_dets = [np.linalg.det(self.variances[k]) for k in range(self.no_classes)]
+		self.var_invs = [np.linalg.inv(self.variances[k]) for k in range(self.no_classes)]
 
 		self.labels = self.init_labels_from_gmm()
 
@@ -119,34 +133,30 @@ class MRF():
 	def local_energy(self, i, j, label):
 		return self.singleton(i,j,label) + self.doubleton(i,j,label)
 
-	### estimation algos for updating labels
-	# efficient graph cut
-
-
 	def update_params(self):
 
-		lab_points = [[] for _ in range(self.no_classes)]
+		label_points = [[] for _ in range(self.no_classes)]
 		for i in range(self.image.height):
 			for j in range(self.image.width):
 				for k in range(self.no_classes):
 					if self.labels[i,j] == k:
-						lab_points[k].append(self.image[i,j])
+						label_points[k].append(self.image[i,j])
 
 		for k in range(self.no_classes):
-			lab_points[k] = np.array(lab_points[k])
+			label_points[k] = np.array(label_points[k])
 
 		# for k in range(self.no_classes):
-		# 	if len(lab_points[k])==0:
-		# 		del lab_points[k]
+		# 	if len(label_points[k])==0:
+		# 		del label_points[k]
 		# 		self.no_classes -= 1
 
-		means = [(1/len(lab_points[k]))*lab_points[k].sum(axis=0) if len(lab_points[k])>0 else self.means[k] for k in range(self.no_classes)]
-		# diffs = [[np.matrix(lab_points[k][i]-means[k]) for i in range(len(lab_points[k]))] for k in range(self.no_classes)  ]
+		means = [(1/len(label_points[k]))*label_points[k].sum(axis=0) if len(label_points[k])>0 else self.means[k] for k in range(self.no_classes)]
+		# diffs = [[np.matrix(label_points[k][i]-means[k]) for i in range(len(label_points[k]))] for k in range(self.no_classes)  ]
 		# variances = [np.matrix([[0.0,0,0],[0,0,0],[0,0,0]]) for _ in range(self.no_classes) ]
 		# for k in range(self.no_classes):
-		# 	if len(lab_points[k])>0:
-		# 		for i in range(len(lab_points[k])):
-		# 			variances[k]+=diffs[k][i]*diffs[k][i].T/len(lab_points[k])
+		# 	if len(label_points[k])>0:
+		# 		for i in range(len(label_points[k])):
+		# 			variances[k]+=diffs[k][i]*diffs[k][i].T/len(label_points[k])
 		# print(self.means[1])
 		self.means = means#, self.variances = means, variances
 
@@ -155,7 +165,7 @@ class MRF():
 
 	def icm(self, thresh=0.0000005):
 		# basically loop through everything picking minimizing labeling until "convergence"
-		print("icm")
+		if self.verbose: print("icm")
 		E_old = self.global_energy()
 		delta_E = 999 # no do-while in python :v[
 		counter = 0
@@ -172,11 +182,11 @@ class MRF():
 			delta_E = math.fabs(E_old - energy)
 			E_old = energy
 			self.update_params()
-			print("THE COUNTER:", counter)
-			print(delta_E)
+			if self.verbose: print("THE COUNTER:", counter)
+			if self.verbose: print(delta_E)
 			counter += 1
 
-		print('took {} iterations'.format(counter)) # \n final energy was {:6.6f}', E_old
+		if self.verbose: print('took {} iterations'.format(counter)) # \n final energy was {:6.6f}', E_old
 
 	def gibbs(self, thresh=0.05, temp=4):
 
@@ -199,10 +209,10 @@ class MRF():
 			energy = self.global_energy()
 			delta_E = math.fabs(E_old - energy)
 			E_old = energy
-			print("THE COUNTER:", counter)
+			if self.verbose: print("THE COUNTER:", counter)
 			counter += 1
 
-		print('took {} iterations\n final energy was {:6.6f}'.format(counter,E_old))
+		if self.verbose: print('took {} iterations\n final energy was {:6.6f}'.format(counter,E_old))
 
 
 class fisher_MRF(MRF):
