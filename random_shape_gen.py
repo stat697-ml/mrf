@@ -7,8 +7,10 @@ class MultiShapeHolder():
 		self.shapes = []
 		self.k = 0
 		self.total_height, self.total_width = total_width, total_height
+		self.from_truth_file = False
 
 	def get_truth(self,filename):
+		self.from_truth_file = True
 		with open(filename,'r') as f:
 			truth = f.read()
 			truth = truth.split('\n')[:-1]
@@ -23,13 +25,19 @@ class MultiShapeHolder():
 				new_shape = Shape(*ltrb,shape_type=st,color=c)
 				self.shapes.append(new_shape)
 #### note: you may need to flip i,j by subtracting from total_height/width
-	def get_shape(self,i,j):
+	def get_shape(self,i,j,flip=None):
+		if flip is None:
+			if self.from_truth_file:
+				flip = True
+			else:
+				flip = False
 		# gives you whatever shape
 		# first flip between my shape coord system and how images are handled lol
-		i = self.total_height - i
-		for s in self.shapes:
-			if s.is_within(i,j): return s
-		return None
+		if flip: i = self.total_height - i
+		tor = [s for s in self.shapes if s.is_within(i,j)]
+		if len(tor) > 0:
+			return tor
+		
 	
 
 class Shape():
@@ -42,7 +50,7 @@ class Shape():
 			color = (255,255,255)
 		self.color = color
 		self.label = label
-		
+
 	@property
 	def bottom(self):
 		return self.bot
