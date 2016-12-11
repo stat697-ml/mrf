@@ -56,6 +56,7 @@ def get_all_shapes(current_labeling):
 	    ss = get_shapes_of_regions(dub)
 	    if len(ss) > 0:
 	        for s in ss:
+	        	s.label = label
 	        	s_tor.append(s)
 	        	# to_display += s.get_mask(current_labeling.shape[0],current_labeling.shape[1])
 	return s_tor#, to_display

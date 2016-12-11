@@ -35,12 +35,14 @@ class MultiShapeHolder():
 class Shape():
 	### note.. going to have to do mess with y_vals when doing testing comparing to truth
 	# stupid open_gl coord system not agreeing with image coords lol
-	def __init__(self,left,top,right,bot,shape_type=None,color=None):
+	def __init__(self,left,top,right,bot,shape_type=None,color=None,label=None):
 		self.left, self.top, self.right, self.bot = left, top, right, bot
 		self.shape_type = shape_type
 		if color is None:
 			color = (255,255,255)
 		self.color = color
+		self.label = label
+		
 	@property
 	def bottom(self):
 		return self.bot
