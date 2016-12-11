@@ -1,3 +1,5 @@
+import math, random
+
 class Shape():
 	### note.. going to have to do mess with y_vals when doing testing comparing to truth
 	# stupid open_gl coord system not agreeing with image coords lol
@@ -25,8 +27,7 @@ class Shape():
 		# returns whether a pixel is inside of the shape
 		return (self.bot <= i <= self.top) and (self.left <= j <= self.right)
 
-	def get_mask(self,total_height,total_width,flip=False):
-		# only have to flip if got the coords from truth :v)
+	def get_mask(self,total_height,total_width):
 		to_return = np.zeros((total_height, total_width))
 		if self.shape_type in ['Rectangle','Square']:
 			to_return[self.bot:self.top,self.left:self.right] = 1
@@ -36,7 +37,6 @@ class Shape():
 			x -= c[0]
 			y -= c[1]
 			to_return = ((x * x)/(wh[0]**2)*4 + (y * y)/(wh[1]**2)*4 < 1)
-		if flip: to_return =  np.flipud(to_return)
 		return to_return
 
 	def __str__(self):
@@ -54,7 +54,6 @@ class ShapeCollection():
 		self.shapes = []
 		self.k = 0
 		self.total_height, self.total_width = total_width, total_height
-		self.from_truth_file = False
 
 	def get_truth(self,filename):
 		self.from_truth_file = True
@@ -71,16 +70,8 @@ class ShapeCollection():
 				c = eval(','.join(shape_vals[-3:]))
 				new_shape = Shape(*ltrb,shape_type=st,color=c)
 				self.shapes.append(new_shape)
-#### note: you may need to flip i,j by subtracting from total_height/width
-	def get_shape(self,i,j,flip=None):
-		if flip is None:
-			if self.from_truth_file:
-				flip = True
-			else:
-				flip = False
+	def get_shape(self,i,j):
 		# gives you whatever shape
-		# first flip between my shape coord system and how images are handled lol
-		if flip: i = self.total_height - i
 		tor = [s for s in self.shapes if s.is_within(i,j)]
 		if len(tor) > 0:
 			return tor

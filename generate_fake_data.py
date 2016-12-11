@@ -114,8 +114,10 @@ if __name__ == '__main__':
 	if not os.path.exists('./scrot'):
 	    os.makedirs('./scrot')
 
-	window = Drawer(200, 125,False)
-	rsg = RandomShapeGenerator(200,125)
+	true_width, true_height  = 200, 125
+
+	window = Drawer(true_width, true_height, False)
+	rsg = RandomShapeGenerator(true_width, true_height)
 	
 
 	counter = 0
@@ -130,9 +132,9 @@ if __name__ == '__main__':
 				wh = s.width_height
 				x,y,w,h = s.left, s.bot, wh[0], wh[1]
 				if s.shape_type == 'Ellipse':
-					window.draw_ellipse(x,y,s.right,s.top,s.color)
+					window.draw_ellipse(x,true_height - y,s.right,true_height - s.top,s.color)
 				else:
-					window.draw_rect(x,y,w,h,s.color)
+					window.draw_rect(x,true_height - y,w,-h,s.color)
 			with open('./scrot/{}.txt'.format(counter//2),'w') as text_dump:
 				text_dump.write(truth)
 		else:
