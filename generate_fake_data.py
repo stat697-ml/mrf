@@ -4,8 +4,8 @@ from PIL import Image
 
 import random, math
 
-from random_shape_gen import RandomShapeGenerator
-size=50
+from shapes import RandomShapeGenerator
+
 class CustomGroup(pyglet.graphics.Group):
 	def set_state(self):
 		gl.glEnable(gl.GL_TEXTURE_2D)
@@ -14,7 +14,7 @@ class CustomGroup(pyglet.graphics.Group):
 		gl.glDisable(gl.GL_TEXTURE_2D)
 
 class Drawer(pyglet.window.Window):
-	def __init__(self, x=size,y=size,visible=False):
+	def __init__(self, x=500,y=500,visible=False):
 		super(Drawer, self).__init__(x,y)
 		self.set_visible(visible)
 		gl.glEnable(gl.GL_BLEND)
@@ -114,8 +114,10 @@ if __name__ == '__main__':
 	if not os.path.exists('./scrot'):
 	    os.makedirs('./scrot')
 
-	window = Drawer(200, 125,False)
-	rsg = RandomShapeGenerator(200,125)
+	true_width, true_height  = 200, 125
+
+	window = Drawer(true_width, true_height, False)
+	rsg = RandomShapeGenerator(true_width, true_height)
 	
 
 	counter = 0
@@ -130,9 +132,9 @@ if __name__ == '__main__':
 				wh = s.width_height
 				x,y,w,h = s.left, s.bot, wh[0], wh[1]
 				if s.shape_type == 'Ellipse':
-					window.draw_ellipse(x,y,s.right,s.top,s.color)
+					window.draw_ellipse(x,true_height - y,s.right,true_height - s.top,s.color)
 				else:
-					window.draw_rect(x,y,w,h,s.color)
+					window.draw_rect(x,true_height - y,w,-h,s.color)
 			with open('./scrot/{}.txt'.format(counter//2),'w') as text_dump:
 				text_dump.write(truth)
 		else:

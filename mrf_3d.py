@@ -1,56 +1,9 @@
 import numpy as np
 import math, random
-import pdb
-from scipy import misc
-from skimage import io, img_as_float, color
-from skimage.exposure import equalize_hist
-from skimage.util import random_noise
-from sklearn.mixture import GaussianMixture
-from skimage.filters import gaussian
+# import pdb
+from gmm import GaussianMixtureModel as oliver_gmm
 
-# from gmm import GaussianMixtureModel as oliver_gmm
-
-class Image():
-	"""
-	holds a picture
-	can either supply a filename or
-	data as a numpy array
-	scale param = how many times to scale image down (default of 10 will make image that is 10 times smaller)
-	"""
-	def __init__(self, filename=None, data=None,pepper=True,scale=10):
-		assert any([filename is not None, data is not None]), "you need to supply an image file or pass a picture array"
-
-		if filename is not None:
-			self._data = io.imread(filename)
-		else:
-			self._data = data
-
-
-		# preprocessing
-		# self._data = color.rgb2lab(self._data)
-		# if self._data.ndim > 2:
-		# 	self._data = equalize_hist(color.rgb2gray(self._data)) # convert to grayscale
-		# self._data = img_as_float(self._data) # lab already normalized??
-		self._data = random_noise(self._data,mode='pepper',amount=0.1,seed=1234)
-		# self._data = gaussian(self._data,sigma=0.05)
-		self._data = self._data[:,:,0:3]/255
-		#self._data = misc.imresize(self._data,1.0)#/255
-
-		if pepper:
-			self._data = random_noise(self._data) # pepper
-
-		if scale > 1:
-			self._data = misc.imresize(self._data,1.0/scale)
-
-		(self.height, self.width, self.bitdepth) = self._data.shape
-
-		self.indices = [(i,j) for i in range(self.height) for j in range(self.width)]
-
-
-	def __getitem__(self, item):
-	# piggyback off of numpy's array indexing
-		return self._data.__getitem__(item)
-
+from image import Image
 
 class MRF():
 	def __init__(self, image, means, variances,verbose=False):
@@ -165,10 +118,7 @@ class MRF():
 		# print(self.means[1])
 		self.means = means#, self.variances = means, variances
 
-
-
-
-	def icm(self, thresh=0.00000000000005):
+	def icm(self, thresh=0.0000005):
 		# basically loop through everything picking minimizing labeling until "convergence"
 		if self.verbose: print("icm")
 		E_old = self.global_energy()
@@ -276,21 +226,21 @@ class hard_boundary_MRF(MRF):
 class fisher2_MRF(MRF):
 	def doubleton(self, i, j, label):
 		energy = 0.0
-		alpha = 2
-		beta = 2
+		alpha = 10
+		beta = 1
 		for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
 			if all([i + dy < self.image.height,
 					i + dy >= 0,
 					j + dx < self.image.width,
 					j + dx >= 0]):
-				# sig = np.matrix(self.variances[label] + self.variances[self.labels[i + dy, j + dx]])
-				# fisher = (self.means[label] - self.means[self.labels[i + dy, j + dx]]) * np.matrix(self.means[label] - self.means[self.labels[i + dy, j + dx]]).T  # *np.linalg.inv(sig)*np.matrix(self.means[label] - self.means[self.labels[i+dy,j+dx]]).T
+				sig = np.matrix(self.variances[label] + self.variances[self.labels[i + dy, j + dx]])
+				fisher = (self.means[label] - self.means[self.labels[i + dy, j + dx]]) * np.matrix(self.means[label] - self.means[self.labels[i + dy, j + dx]]).T  # *np.linalg.inv(sig)*np.matrix(self.means[label] - self.means[self.labels[i+dy,j+dx]]).T
 				# print(fisher)
 				if label == self.labels[i+dy,j+dx]:
 					energy += -beta+alpha*(self.image[i,j]-self.image[i+dy,j+dx])*np.matrix(self.image[i,j]-self.image[i+dy,j+dx]).T
 				else:
 
-					energy += beta*10
+					energy += beta
 		return energy
 
 class pixel_MRF(MRF):
@@ -338,10 +288,9 @@ class SecondOrderMRF(MRF):
 		masked_label_array[1,1] = True
 		# this will be True if the labels all match one of the check arrays
 		check = max([np.all(masked_label_array==ca) for ca in self.check_arrays])
-		beta = 5
 		if check:
-			return -beta
-		return beta
+			return -1
+		return 1
 
 #
 #
@@ -368,10 +317,10 @@ class SecondOrderMRF(MRF):
 
 if __name__ == '__main__':
 	import matplotlib.pyplot as plt
-	K = 7
+	K = 6
 	# test_img = Image() # should raise error
-	test_img = Image('./watershed.png')#Image('./test_resized_2.jpg')
-	# test_img = io.imread('./watershed.png')
+	test_img = Image('./test_images/watershed.png')#Image('./test_resized_2.jpg')
+
 	# means = [np.array([random.uniform(0,1),random.uniform(0,1),random.uniform(0,1) ]) for _ in range(K)]
 	# means = [np.array([1/k,1/k,1/k]) for k in range(1,K+1)]
 	variances = [ np.eye(3)] * K#random.uniform(1,2) *
@@ -380,34 +329,31 @@ if __name__ == '__main__':
 	 ### this is how i interface w/ ur code
 	# # #
 
-	# test_gmm = oliver_gmm(test_img,K)
-	test_gmm = GaussianMixture(K,'diag',init_params='random',verbose=1)
-	d2_array = np.reshape(np.ravel(test_img._data),(test_img._data.shape[0]*test_img._data.shape[1],test_img._data.shape[2]))
-	res = test_gmm.fit(d2_array)
+	test_gmm = oliver_gmm(test_img,K)
 	# plt.imshow(test_img._data)
 	# plt.show()
 	# init_pi = [0.33, 0.33, 0.34]
 	# init_mu = [np.array([0.5, 0.5, 0.5])]*3
 	# init_sigma = [np.matrix([[1000.0, 0.0, 0.0], [0.0, 157.0, 0.0], [0.0, 0.0, 1.0]]) for _ in range(3)]
 
-	# [pi_est, means, not_variances] = test_gmm.estimate_parameters(25)
-	test_mrf = SecondOrderMRF(test_img, res.means_, [np.eye(3)*res.covariances_[i] for i in range(K)])
+	[pi_est, means, not_variances] = test_gmm.estimate_parameters(25)
+	test_mrf = SecondOrderMRF(test_img,means,variances)
 
 	# test_mrf = fisher2_MRF(test_img,means,variances)
 	# test_mrf.doubleton = new_doubleton
 	plt.imshow(test_mrf.labels)
 	# plt.show()
-	plt.savefig('before.png',cmap='gist_gray_r')
+	plt.savefig('./scrot/before.png',cmap='gist_gray_r')
 	test_mrf.icm()
 	# test_mrf.gibbs()
 	plt.imshow(test_mrf.labels)
-	plt.savefig('after_icm.png',cmap='gist_gray_r')
+	plt.savefig('./scrot/after_icm.png',cmap='gist_gray_r')
 	im = np.zeros([test_img.height,test_img.width,3])
 	for i in range(test_img.height):
 		for j in range(test_img.width):
 			im[i,j] = test_mrf.means[test_mrf.labels[i,j]]
 	plt.imshow(im)
-	plt.savefig('real_means.png',cmap='gist_gray_r')
+	plt.savefig('./scrot/real_means.png',cmap='gist_gray_r')
 	# plt.savefig('after_gibbs.png',cmap='gist_gray_r')
 	# lol, for my 640 x 425 px image this code took 140 seconds to run on my desktop
 
