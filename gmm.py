@@ -128,7 +128,7 @@ if __name__ == '__main__':
     # init_sigma = [np.matrix([[1000.0, 0.0, 0.0], [0.0, 157.0, 0.0], [0.0, 0.0, 1.0]]) for i in range(K)]
 
     # GMM.init_labels_params()
-    im = misc.imresize(mpimg.imread("./watershed.png"),5)/255
+    im = misc.imresize(mpimg.imread("./test_images/watershed.png"),5)/255
     im = Image(data=im)
 
     GMM = GaussianMixtureModel(im, K)

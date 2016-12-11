@@ -4,7 +4,7 @@ from PIL import Image
 
 import random, math
 
-from random_shape_gen import RandomShapeGenerator
+from shapes import RandomShapeGenerator
 
 class CustomGroup(pyglet.graphics.Group):
 	def set_state(self):

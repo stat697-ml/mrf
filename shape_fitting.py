@@ -1,4 +1,4 @@
-from skimage import measure, ndimage
+from skimage import measure
 from scipy import ndimage
 import math
 import numpy as np
@@ -62,17 +62,18 @@ def get_all_shapes(current_labeling):
 	return s_tor#, to_display
 
 if __name__ == '__main__':
-	from draw import random_shape_gen # i have shape_gen inside a draw folder idk code will need refactoring tomorrow
-	from mrf_3d import MRF, Image
+	import random_shape_gen
+	from mrf_3d import MRF
+	from image import Image
 
 	from sklearn.mixture import GaussianMixture # heh
-	test_file = './draw/scrot/0.png'
+	test_file = './scrot/0.png'
 	test_img = Image(filename=test_file,pepper=True,scale=1) # added some preprocessing params to image
 	test_truth = random_shape_gen.MultiShapeHolder(test_img.width,test_img.height)
-	test_truth.get_truth('./draw/scrot/0.txt')
+	test_truth.get_truth('./scrot/0.txt')
 	k = len(test_truth.shapes)
 	test_gmm = GaussianMixture(k+1,'full',init_params='random',verbose=1) # k+1 because of background!!
-	d2_array = np.reshape(np.ravel(test_img._data),(test_img.height*test_img._data.width,test_img.bitdepth)) # flatten
+	d2_array = np.reshape(np.ravel(test_img._data),(test_img.height*test_img.width,test_img.bitdepth)) # flatten
 	test_gmm.fit(d2_array)
 	test_mrf = MRF(test_img,test_gmm.means_,test_gmm.covariances_,verbose=True)
 	test_mrf.icm()

@@ -1,51 +1,9 @@
 import numpy as np
 import math, random
-import pdb
-from scipy import misc
-from skimage import io, img_as_float, color
-from skimage.exposure import equalize_hist
-from skimage.util import random_noise
-
+# import pdb
 from gmm import GaussianMixtureModel as oliver_gmm
 
-class Image():
-	"""
-	holds a picture
-	can either supply a filename or
-	data as a numpy array
-	scale param = how many times to scale image down (default of 10 will make image that is 10 times smaller)
-	"""
-	def __init__(self, filename=None, data=None,pepper=True,scale=10):
-		assert any([filename is not None, data is not None]), "you need to supply an image file or pass a picture array"
-
-		if filename is not None:
-			self._data = io.imread(filename)
-		else:
-			self._data = data
-
-
-		# preprocessing
-		# self._data = color.rgb2lab(self._data)
-		# if self._data.ndim > 2:
-		# 	self._data = equalize_hist(color.rgb2gray(self._data)) # convert to grayscale
-		self._data = self._data[:,:,0:3]
-		self._data = img_as_float(self._data) 
-
-		if pepper:
-			self._data = random_noise(self._data) # pepper
-
-		if scale > 1:
-			self._data = misc.imresize(self._data,1.0/scale)
-
-		(self.height, self.width, self.bitdepth) = self._data.shape
-
-		self.indices = [(i,j) for i in range(self.height) for j in range(self.width)]
-
-
-	def __getitem__(self, item):
-	# piggyback off of numpy's array indexing
-		return self._data.__getitem__(item)
-
+from image import Image
 
 class MRF():
 	def __init__(self, image, means, variances,verbose=False):
@@ -159,9 +117,6 @@ class MRF():
 		# 			variances[k]+=diffs[k][i]*diffs[k][i].T/len(label_points[k])
 		# print(self.means[1])
 		self.means = means#, self.variances = means, variances
-
-
-
 
 	def icm(self, thresh=0.0000005):
 		# basically loop through everything picking minimizing labeling until "convergence"
@@ -364,7 +319,7 @@ if __name__ == '__main__':
 	import matplotlib.pyplot as plt
 	K = 6
 	# test_img = Image() # should raise error
-	test_img = Image('./watershed.png')#Image('./test_resized_2.jpg')
+	test_img = Image('./test_images/watershed.png')#Image('./test_resized_2.jpg')
 
 	# means = [np.array([random.uniform(0,1),random.uniform(0,1),random.uniform(0,1) ]) for _ in range(K)]
 	# means = [np.array([1/k,1/k,1/k]) for k in range(1,K+1)]
@@ -388,17 +343,17 @@ if __name__ == '__main__':
 	# test_mrf.doubleton = new_doubleton
 	plt.imshow(test_mrf.labels)
 	# plt.show()
-	plt.savefig('before.png',cmap='gist_gray_r')
+	plt.savefig('./scrot/before.png',cmap='gist_gray_r')
 	test_mrf.icm()
 	# test_mrf.gibbs()
 	plt.imshow(test_mrf.labels)
-	plt.savefig('after_icm.png',cmap='gist_gray_r')
+	plt.savefig('./scrot/after_icm.png',cmap='gist_gray_r')
 	im = np.zeros([test_img.height,test_img.width,3])
 	for i in range(test_img.height):
 		for j in range(test_img.width):
 			im[i,j] = test_mrf.means[test_mrf.labels[i,j]]
 	plt.imshow(im)
-	plt.savefig('real_means.png',cmap='gist_gray_r')
+	plt.savefig('./scrot/real_means.png',cmap='gist_gray_r')
 	# plt.savefig('after_gibbs.png',cmap='gist_gray_r')
 	# lol, for my 640 x 425 px image this code took 140 seconds to run on my desktop
 
