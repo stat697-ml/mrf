@@ -56,7 +56,6 @@ class ShapeCollection():
 		self.total_height, self.total_width = total_width, total_height
 
 	def get_truth(self,filename):
-		self.from_truth_file = True
 		with open(filename,'r') as f:
 			truth = f.read()
 			truth = truth.split('\n')[:-1]
@@ -70,6 +69,7 @@ class ShapeCollection():
 				c = eval(','.join(shape_vals[-3:]))
 				new_shape = Shape(*ltrb,shape_type=st,color=c)
 				self.shapes.append(new_shape)
+				
 	def get_shape(self,i,j):
 		# gives you whatever shape
 		tor = [s for s in self.shapes if s.is_within(i,j)]
