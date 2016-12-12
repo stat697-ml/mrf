@@ -8,8 +8,13 @@ def get_bounds(examine):
 	cntr = ndimage.measurements.center_of_mass(examine)
 	return cntr, pot_h, pot_w
 
+def get_max_bounds(examine):
+	p_h =  1 - min(np.argmax(np.flipud(examine),axis=0)) / examine.shape[0] 
+	p_w = 1 - min(np.argmax(np.fliplr(examine),axis=1)) / examine.shape[1]
+	return p_h, p_w 
+
 # input: (potentially) binary mask from a label (bin_mask)
-def get_shapes_of_regions(bin_mask,bg_thresh=.75,rect_ellipse_thresh=.5,too_small_thresh=200):
+def get_shapes_of_regions(bin_mask,bg_thresh=.87,rect_ellipse_thresh=.5,too_small_thresh=200):
 	# this does connected components, i think implementing this algo would be outside of the scope
 	# of this class because it's not probabilistic.. (if u look @ source you'll see it's all c code anyways
 	# so reimplementing will just slow our code down even more)
@@ -17,9 +22,8 @@ def get_shapes_of_regions(bin_mask,bg_thresh=.75,rect_ellipse_thresh=.5,too_smal
 	tor = []
 	if nk == 0: return tor
 	# check that this isnt background -.-
-	_, pot_h, pot_w = get_bounds(bin_mask)
-	tot_h, tot_w = bin_mask.shape[0], bin_mask.shape[1]
-	if all([pot_h/tot_h >= bg_thresh, pot_w/tot_w >= bg_thresh]): return tor
+	prcnt_h, prcnt_w = get_max_bounds(bin_mask)
+	if all([prcnt_h >= bg_thresh, prcnt_w >= bg_thresh]): return tor
 	# get rid of things that are not major shapes..
 	tru_ks = [k for k in range(1,nk+1) if np.sum(labeling==k) > too_small_thresh] 
 	
