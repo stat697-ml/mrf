@@ -264,20 +264,32 @@ class SecondOrderMRF(MRF):
 		super(SecondOrderMRF,self).__init__(*args)
 		self.check_arrays = [
 		[[1,0,0],
-		 [0,1,0],
+		 [1,1,0],
+		 [1,1,1]],
+		[[1,1,1],
+		 [0,1,1],
 		 [0,0,1]],
-		[[0,1,0],
-		 [0,1,0],
-		 [0,1,0]],
-		[[0,0,1],
-		 [0,1,0],
+		[[1,1,0],
+		 [1,1,0],
+		 [1,1,0]],
+		[[0,1,1],
+		 [0,1,1],
+		 [0,1,1]],
+		[[1,1,1],
+		 [1,1,0],
 		 [1,0,0]],
-		[[0,0,0],
+		[[0,0,1],
+		 [0,1,1],
+		 [1,1,1]],
+		[[1,1,1],
 		 [1,1,1],
 		 [0,0,0]],
-		 [[1,1,1],
-		  [1,1,1],
-		  [1,1,1]]
+		[[0,0,0],
+		 [1,1,1],
+		 [1,1,1]],
+		[[1,1,1],
+		 [1,1,1],
+		 [1,1,1]],
 		]
 
 	def doubleton(self, i, j, label):
@@ -286,9 +298,7 @@ class SecondOrderMRF(MRF):
 
 		masked_label_array = self.labels[i_start:i_end+1,j_start:j_end+1] == label
 		masked_label_array[1,1] = True
-		# this will be True if the labels all match one of the check arrays
-		check = max([np.all(masked_label_array==ca) for ca in self.check_arrays])
-		if check:
+		if masked_label_array in self.check_arrays:
 			return -1
 		return 1
 

@@ -1,6 +1,5 @@
 import pyglet
 from pyglet import gl
-from PIL import Image
 
 import random, math
 
