@@ -298,7 +298,8 @@ class SecondOrderMRF(MRF):
 
 		masked_label_array = self.labels[i_start:i_end+1,j_start:j_end+1] == label
 		masked_label_array[1,1] = True
-		if masked_label_array in self.check_arrays:
+		check = max([np.all(masked_label_array==ca) for ca in self.check_arrays])
+		if check:
 			return -1
 		return 1
 
