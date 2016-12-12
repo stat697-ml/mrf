@@ -1,12 +1,33 @@
 import numpy as np
 from mrf_3d import MRF
 import math, random
+
+
+def resegment(mask, imm, label, means, variances):
+	# im_mask = mask
+	# mask = np.zeros([mask.shape[0],mask.shape[1], 3])
+	# mask[:, :, 0] = im_mask
+	# mask[:, :, 1] = im_mask
+	# mask[:, :, 2] = im_mask
+	imm = Image(data=imm,scale=1,pepper=False)
+	# print(imm.width*imm.height)
+	# print(mask.shape)
+	im_mrf = ShapeSegmentMRF(imm, means, variances,label, mask,test_mrf.labels)
+	im_mrf.icm()
+	image = np.zeros([im_mrf.labels.shape[0], im_mrf.labels.shape[1], 3])
+	for i in range(image.shape[0]):
+		for j in range(image.shape[1]):
+			image[i, j] = im_mrf.means[im_mrf.labels[i, j]]
+	return image
+
 class ShapeSegmentMRF(MRF):
-	def __init__(self,image, means,variances,color_label, mask):
+	def __init__(self,image, means,variances,color_label, mask,old_labels):
 		super(ShapeSegmentMRF,self).__init__(image, means,variances)
 		self.color_label = color_label
 		self.mask=mask
-	def local_energy(self,i,j, lab):
+		print(np.any(mask==1))
+		self.labels = old_labels
+	def local_energy(self,i,j,lab):
 		beta = 10
 		if lab == self.color_label:
 			return -beta + beta*np.matrix(self.means[self.color_label]-self.image[i,j])*np.matrix(self.means[self.color_label]-self.image[i,j]).T
@@ -17,11 +38,11 @@ class ShapeSegmentMRF(MRF):
 		E_old = self.global_energy()
 		delta_E = 999 # no do-while in python :v[
 		counter = 0
-		while delta_E > thresh and counter < 10: # threshold for convergence
+		while counter < 10: # threshold for convergence,....delta_E > thresh and
 			delta_E = 0
 			# mix up the order the indices are visited
 			random.shuffle(self.indices)
-
+			print(self.mask.shape)
 			for i, j in self.indices:
 				if self.mask[i,j]:
 					local_energies = [self.local_energy(i,j,lab) for lab in range(self.no_classes)]

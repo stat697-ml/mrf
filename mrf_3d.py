@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import numpy as np
 import math, random
 # import pdb
@@ -7,7 +6,7 @@ from gmm import GaussianMixtureModel as oliver_gmm
 from image import Image
 
 class MRF():
-	def __init__(self, image, means, variances,verbose=False):
+	def __init__(self, image, means, variances,verbose=True):
 		self.verbose = verbose
 		# mean, var comes from gmm
 		self.image = image
@@ -125,7 +124,7 @@ class MRF():
 		E_old = self.global_energy()
 		delta_E = 999 # no do-while in python :v[
 		counter = 0
-		while delta_E > thresh and counter < 10: # threshold for convergence
+		while delta_E > thresh and counter < 1: # threshold for convergence
 			delta_E = 0
 			# mix up the order the indices are visited
 			random.shuffle(self.indices)
@@ -299,7 +298,7 @@ class SecondOrderMRF(MRF):
 
 		masked_label_array = self.labels[i_start:i_end+1,j_start:j_end+1] == label
 		masked_label_array[1,1] = True
-		if masked_label_array in self.check_arrays:
+		if list(masked_label_array) in self.check_arrays:
 			return -1
 		return 1
 
@@ -376,7 +375,6 @@ if __name__ == '__main__':
 # d2_array = np.reshape(np.ravel(test_img),(test_img.shape[0]*test_img.shape[1],test_img.shape[2]))
 # res = test_gmm.fit(d2_array)
 # print(res.means_)
-=======
 import numpy as np
 import math, random
 # import pdb
@@ -707,9 +705,9 @@ class SecondOrderMRF(MRF):
 
 if __name__ == '__main__':
 	import matplotlib.pyplot as plt
-	K = 6
+	K = 8
 	# test_img = Image() # should raise error
-	test_img = Image('./test_images/watershed.png')#Image('./test_resized_2.jpg')
+	test_img = Image('./scrot/2.png')#Image('./test_resized_2.jpg')
 
 	# means = [np.array([random.uniform(0,1),random.uniform(0,1),random.uniform(0,1) ]) for _ in range(K)]
 	# means = [np.array([1/k,1/k,1/k]) for k in range(1,K+1)]
@@ -719,7 +717,7 @@ if __name__ == '__main__':
 	 ### this is how i interface w/ ur code
 	# # #
 
-	test_gmm = oliver_gmm(test_img,K)
+	# test_gmm = oliver_gmm(test_img,K)
 	# plt.imshow(test_img._data)
 	# plt.show()
 	# init_pi = [0.33, 0.33, 0.34]
@@ -755,5 +753,4 @@ if __name__ == '__main__':
 # d2_array = np.reshape(np.ravel(test_img),(test_img.shape[0]*test_img.shape[1],test_img.shape[2]))
 # res = test_gmm.fit(d2_array)
 # print(res.means_)
->>>>>>> 1c09f6e9e3d6268921b2d87244a965d766d7e689
 # print(res.covariances_)

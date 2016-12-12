@@ -14,7 +14,7 @@ class Image():
 		assert any([filename is not None, data is not None]), "you need to supply an image file or pass a picture array"
 
 		if filename is not None:
-			self._data = io.imread(filename)
+			self._data = io.imread(filename)/255
 		else:
 			self._data = data
 

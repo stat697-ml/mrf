@@ -1,4 +1,5 @@
 import math, random
+import numpy as np
 
 class Shape():
 	### note.. going to have to do mess with y_vals when doing testing comparing to truth
