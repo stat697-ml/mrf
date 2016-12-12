@@ -1,9 +1,9 @@
 import numpy as np
 from mrf_3d import MRF
 import math, random
+from image import Image
 
-
-def resegment(mask, imm, label, means, variances):
+def resegment(test_mrf, mask, imm, label, means, variances):
 	# im_mask = mask
 	# mask = np.zeros([mask.shape[0],mask.shape[1], 3])
 	# mask[:, :, 0] = im_mask
@@ -17,7 +17,7 @@ def resegment(mask, imm, label, means, variances):
 	image = np.zeros([im_mrf.labels.shape[0], im_mrf.labels.shape[1], 3])
 	for i in range(image.shape[0]):
 		for j in range(image.shape[1]):
-			image[i, j] = im_mrf.means[im_mrf.labels[i, j]]
+			image[i, j] = test_mrf.means[im_mrf.labels[i, j]]
 	return image
 
 class ShapeSegmentMRF(MRF):
@@ -25,7 +25,6 @@ class ShapeSegmentMRF(MRF):
 		super(ShapeSegmentMRF,self).__init__(image, means,variances)
 		self.color_label = color_label
 		self.mask=mask
-		print(np.any(mask==1))
 		self.labels = old_labels
 	def local_energy(self,i,j,lab):
 		beta = 10
@@ -34,7 +33,7 @@ class ShapeSegmentMRF(MRF):
 		return beta
 	def icm(self, thresh=0.00000000000005):
 		# basically loop through everything picking minimizing labeling until "convergence"
-		print("icm")
+		# print("icm")
 		E_old = self.global_energy()
 		delta_E = 999 # no do-while in python :v[
 		counter = 0
@@ -42,7 +41,7 @@ class ShapeSegmentMRF(MRF):
 			delta_E = 0
 			# mix up the order the indices are visited
 			random.shuffle(self.indices)
-			print(self.mask.shape)
+			# print(self.mask.shape)
 			for i, j in self.indices:
 				if self.mask[i,j]:
 					local_energies = [self.local_energy(i,j,lab) for lab in range(self.no_classes)]
@@ -52,8 +51,8 @@ class ShapeSegmentMRF(MRF):
 			delta_E = math.fabs(E_old - energy)
 			E_old = energy
 			self.update_params()
-			print("THE COUNTER:", counter)
-			print(delta_E)
+			# print("THE COUNTER:", counter)
+			# print(delta_E)
 			counter += 1
 
 		print('took {} iterations'.format(counter)) # \n final energy was {:6.6f}', E_old
