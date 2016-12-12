@@ -10,7 +10,7 @@ class Image():
 	data as a numpy array
 	scale param = how many times to scale image down (default of 10 will make image that is 10 times smaller)
 	"""
-	def __init__(self, filename=None, data=None,pepper=True,scale=10):
+	def __init__(self, filename=None, data=None,pepper=False,scale=10):
 		assert any([filename is not None, data is not None]), "you need to supply an image file or pass a picture array"
 
 		if filename is not None:
