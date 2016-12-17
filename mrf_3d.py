@@ -514,8 +514,8 @@ class MRF():
 			delta_E = math.fabs(E_old - energy)
 			E_old = energy
 			self.update_params()
-			if self.verbose: print("THE COUNTER:", counter)
-			if self.verbose: print(delta_E)
+			print("THE COUNTER:", counter)
+			print(delta_E)
 			counter += 1
 
 		if self.verbose: print('took {} iterations'.format(counter)) # \n final energy was {:6.6f}', E_old

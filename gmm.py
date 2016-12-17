@@ -9,9 +9,11 @@ import pdb
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 #from numba import jit
+from sklearn.mixture import GaussianMixture
 sd = 1
 np.random.seed(sd)
 random.seed(sd)
+from image import Image
 
 class GaussianMixtureModel(object):
 	def __init__(self, img, K):#, pi_init, mu_init, sigma_init):
@@ -64,50 +66,61 @@ class GaussianMixtureModel(object):
 					# pdb.set_trace()
 					mu_new[k] += gamma_z[i, j, k] * self.data[i, j] / N[k]
 
-		sigma_new = np.array([[0,0,0] for _ in range(self.K)])
+		sigma_new = [[0.0,0,0] for _ in range(self.K)]
 		for i in range(self.data.height):  # TODO:vectorize
 			for j in range(self.data.width):
 				diffs = [np.matrix(self.data[i, j] - mu_new[k]) for k in range(self.K)]
 				for k in range(self.K):
-					sigma_new[k][0] += gamma_z[i, j, k] * (diffs[k][0] ** 2) / N[k]
-					sigma_new[k][1] += gamma_z[i, j, k] * (diffs[k][1] ** 2) / N[k]
-					sigma_new[k][2] += gamma_z[i, j, k] * (diffs[k][2] ** 2) / N[k]
+					# print(sigma_new)
+					# sigma_new[k] += gamma_z[i, j, k] * diffs[k].T * (diffs[k]) / N[k]
+					sigma_new[k][0] += gamma_z[i, j, k] * (diffs[k].item(0) ** 2) / N[k]
+					sigma_new[k][1] += gamma_z[i, j, k] * (diffs[k].item(1) ** 2) / N[k]
+					sigma_new[k][2] += gamma_z[i, j, k] * (diffs[k].item(2) ** 2) / N[k]
 
 		return [pi_new, mu_new, [sigma_new[k]*np.eye(3) for k in range(self.K)]]
 
-	# def likelihood(self,gamma_z,pi,mu,sigma):
-	# 	total = 0;
-	# 	for i in range(self.data.height):#TODO:vectorize
-	# 		for j in range(self.data.width):
-	# 			diffs = [np.matrix(self.data[i, j, 0:3] - mu[k]) for k in range(self.K)]
-	# 			log_arg = 0
-	# 			for k in range(self.K):
-	# 				log_arg+= pi[k](math.log(pi[k]) - math.log
+	def likelihood(self,pi,mu,sigma):
+		total = 0;
+		normals = [stats.multivariate_normal(mean=mu[i], cov=sigma[i]) for i in range(self.K)]
+		for i in range(self.data.height):#TODO:vectorize
+			for j in range(self.data.width):
+				diffs = [np.matrix(self.data[i, j, 0:3] - mu[k]) for k in range(self.K)]
+				log_arg = 0
+				for k in range(self.K):
+					log_arg+= pi[k]*normals[k].pdf(self.data[i,j])
+				total += math.log(log_arg)
+		return total
 	#@profile
 	def estimate_parameters(self, max_iter):
 		i = 0
+		thresh = 0.005
 		pi_est = self.pi
 		mu_est = self.mu
 		sigma_est = self.sigma
-		while i < max_iter:
+		delta_ELBO = 999
+		while i < max_iter and delta_ELBO > thresh:
 			print(i)
+			old_ELBO = self.likelihood(pi_est, mu_est, sigma_est)
 			# print(pi_est)
-			print(mu_est)
-			print(sigma_est)
+			# print(mu_est)
+			# print(sigma_est)
 			gamma_z = self.E_step(pi_est, mu_est, sigma_est)
 			# pdb.set_trace()
 			[pi_est, mu_est, sigma_est] = self.M_step(gamma_z)
+			new_ELBO = self.likelihood(pi_est, mu_est, sigma_est)
+			delta_ELBO = math.fabs(old_ELBO-new_ELBO)
+			print(delta_ELBO)
 			i += 1
 		### PLEASE DON'T LEAVE THIS IN###
-		temp = np.copy(sigma_est[0][0])
-		sigma_est[0][0] = np.copy(sigma_est[0][1])
-		sigma_est[0][1] = temp
+		# temp = np.copy(sigma_est[0][0])
+		# sigma_est[0][0] = np.copy(sigma_est[0][1])
+		# sigma_est[0][1] = temp
 		return [pi_est, mu_est, sigma_est]
 
 if __name__ == '__main__':   
     #### Main Code ####
     NN = 30
-    K = 4
+    K = 2
     # m = [0,0]
     # sigma = [0,0]
     # m[0] = (np.array([4,4]))
@@ -117,13 +130,12 @@ if __name__ == '__main__':
 
     # m = np.array([0.0, 0.0, 1.0])
     # mu = [m for i in range(K)]  # row vectors...
-    # sigma = [np.matrix([[2.0, 10.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]]), np.matrix([[2.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) ]
+    # sigma = [np.matrix([[12.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]]), np.matrix([[2.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) ]
     # pi = [0.75, 0.25]
-    # z = np.random.choice(size=[100, 100], a=[0, 1], p=pi)
+    # z = np.random.choice(size=[NN, NN], a=[0, 1], p=pi)
     # im = np.zeros([NN, NN, 3])
     # for ii in range(NN):
     # 	for jj in range(NN):
-    # 		# plt.hold(true)
     # 		im[ii, jj] = np.random.multivariate_normal(mean=mu[z[ii, jj]], cov=sigma[z[ii, jj]])
 
     # init_pi = [0.5, 0.5]
@@ -131,11 +143,11 @@ if __name__ == '__main__':
     # init_sigma = [np.matrix([[1000.0, 0.0, 0.0], [0.0, 157.0, 0.0], [0.0, 0.0, 1.0]]) for i in range(K)]
 
     # GMM.init_labels_params()
-    im = misc.imresize(mpimg.imread("./test_images/watershed.png"),5)/255
-    im = Image(data=im)
+    im = mpimg.imread("./yosemite.png")
+    im1 = Image(data=im,scale=5,pepper=False)
 
-    GMM = GaussianMixtureModel(im, K)
-    ests = GMM.estimate_parameters(100)
+    GMM = GaussianMixtureModel(im1, K)
+    ests = GMM.estimate_parameters(200)
     # print(ests)
     # for est in ests:
     print(ests[2])
@@ -144,3 +156,12 @@ if __name__ == '__main__':
     # plt.figure(2)
     # plt.imshow(ests[2][0])
     # plt.show()
+    test_gmm = GaussianMixture(K, 'diag', init_params='random', verbose=1)
+    d2_array = np.reshape(np.ravel(im1._data),(im1._data.shape[0] * im1._data.shape[1], im1._data.shape[2]))
+    res = test_gmm.fit(d2_array)
+    print(res.covariances_)
+
+	###
+	#Next, write ELBO in, so can measure convergence.
+	#
+	#
