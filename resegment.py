@@ -2,6 +2,7 @@ import numpy as np
 from mrf_3d import MRF
 import math, random
 from image import Image
+import pdb
 
 def resegment(test_mrf, mask, imm, label, means, variances):
 	# im_mask = mask
@@ -26,18 +27,26 @@ class ShapeSegmentMRF(MRF):
 		self.color_label = color_label
 		self.mask=mask
 		self.labels = old_labels
+		self.stddev = 0.0
+		for m in self.means:
+			for n in self.means:
+				self.stddev+=np.matrix(n-m)*np.matrix(n-m).T
+		self.stddev = math.sqrt(self.stddev/(len(self.means)**2))
 	def local_energy(self,i,j,lab):
-		beta = 10
 		if lab == self.color_label:
-			return -beta + beta*np.matrix(self.means[self.color_label]-self.image[i,j])*np.matrix(self.means[self.color_label]-self.image[i,j]).T
-		return beta
+			# pdb.set_trace()
+			# print(np.matrix(self.means[self.color_label]-self.image[i,j])*np.matrix(self.means[self.color_label]-self.image[i,j]).T)
+			# print('mean',self.means[self.color_label],'intensity',self.image[i,j])
+			# print("stddev: ",self.stddev)
+			return -1 + (np.matrix(self.means[self.color_label]-self.image[i,j])*np.matrix(self.means[self.color_label]-self.image[i,j]).T)/3
+		return 1
 	def icm(self, thresh=0.00000000000005):
 		# basically loop through everything picking minimizing labeling until "convergence"
 		# print("icm")
 		E_old = self.global_energy()
 		delta_E = 999 # no do-while in python :v[
 		counter = 0
-		while counter < 10: # threshold for convergence,....delta_E > thresh and
+		while counter < 1: # threshold for convergence,....delta_E > thresh and
 			delta_E = 0
 			# mix up the order the indices are visited
 			random.shuffle(self.indices)

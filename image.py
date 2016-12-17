@@ -10,11 +10,11 @@ class Image():
 	data as a numpy array
 	scale param = how many times to scale image down (default of 10 will make image that is 10 times smaller)
 	"""
-	def __init__(self, filename=None, data=None,pepper=False,scale=10):
+	def __init__(self, filename=None, data=None,pepper=True,scale=10):
 		assert any([filename is not None, data is not None]), "you need to supply an image file or pass a picture array"
 
 		if filename is not None:
-			self._data = io.imread(filename)/255
+			self._data = io.imread(filename)
 		else:
 			self._data = data
 
@@ -24,10 +24,10 @@ class Image():
 		# 	self._data = equalize_hist(color.rgb2gray(self._data)) # convert to grayscale
 		
 		self._data = self._data[:,:,0:3]
-		self._data = img_as_float(self._data) 
+
 
 		if pepper:
-			self._data = random_noise(self._data) # pepper
+			self._data = random_noise(self._data,var=0.01) # pepper
 
 		if scale > 1:
 			self._data = misc.imresize(self._data,1.0/scale)
@@ -35,7 +35,7 @@ class Image():
 		(self.height, self.width, self.bitdepth) = self._data.shape
 
 		self.indices = [(i,j) for i in range(self.height) for j in range(self.width)]
-
+		self._data = img_as_float(self._data)
 
 	def __getitem__(self, item):
 	# piggyback off of numpy's array indexing
