@@ -30,11 +30,11 @@ class MRFScripts():
         img = img[:,180:-180,:]
         return img
 
-    def get_img(self,fname):
+    def get_img(self,fname,ppr=True):
         if self.last_fname == fname and self.last_img is not None:
             return self.last_img
         img_data = self.crop_image(fname)
-        new_img = Image(data=img_data,pepper=True,scale=10)
+        new_img = Image(data=img_data,pepper=ppr,scale=10)
         self.last_img = new_img
         return new_img
 
@@ -97,7 +97,7 @@ class MRFScripts():
 
 
     def segment_with_priors(self,fname,K):
-        test_img = self.get_img(fname)
+        test_img = self.get_img(fname,False)
         test_gmm = self.get_gmm(fname,K)
         if self.gmm_type == 'sklearn':
             test_mrf = SecondOrderMRF(test_img, test_gmm.means_, [np.eye(3) * test_gmm.covariances_[i] for i in range(K)],verbose=self.verbose)

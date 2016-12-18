@@ -93,7 +93,7 @@ class Drawer(pyglet.window.Window):
 		self.buttons = [Button(self.width-90,self.height-60,'clear',self.delet_screen),
 						Button(self.width-90,self.height-175,'randomize',self.draw_random),
 						Button(self.width-90,self.height-290,'just gmm',self.run_gmm),
-						Button(self.width-90,self.height-405,'vanilla mrf',self.run_vmrf),
+						Button(self.width-90,self.height-405,'basic mrf',self.run_vmrf),
 						Button(self.width-90,self.height-520,'boundaries',self.run_hbmrf),
 						Button(self.width-90,self.height-635,'shape priors',self.run_spmrf),
 

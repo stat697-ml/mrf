@@ -38,7 +38,7 @@ class ShapeSegmentMRF(MRF):
 			# print(np.matrix(self.means[self.color_label]-self.image[i,j])*np.matrix(self.means[self.color_label]-self.image[i,j]).T)
 			# print('mean',self.means[self.color_label],'intensity',self.image[i,j])
 			# print("stddev: ",self.stddev)
-			return -1 + (np.matrix(self.means[self.color_label]-self.image[i,j])*np.matrix(self.means[self.color_label]-self.image[i,j]).T)/3
+			return -1 + (np.matrix(self.means[self.color_label]-self.image[i,j])*np.matrix(self.means[self.color_label]-self.image[i,j]).T)
 		return 1
 	def icm(self, thresh=0.00000000000005):
 		# basically loop through everything picking minimizing labeling until "convergence"
