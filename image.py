@@ -30,7 +30,7 @@ class Image():
 			self._data = random_noise(self._data,var=0.01) # pepper
 
 		if scale > 1:
-			self._data = misc.imresize(self._data,1.0/scale)
+			self._data = misc.imresize(self._data,1.0/scale,'nearest')
 
 		(self.height, self.width, self.bitdepth) = self._data.shape
 

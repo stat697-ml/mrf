@@ -1,49 +1,31 @@
 import numpy as np
-from random import randint
 import random
 from scipy import stats
-#from mrf_3d import Image
 from scipy import misc
 import math
-import pdb
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-#from numba import jit
-from sklearn.mixture import GaussianMixture
-sd = 1
-np.random.seed(sd)
-random.seed(sd)
-from image import Image
+# import pdb
 
-class GaussianMixtureModel(object):
-	def __init__(self, img, K):#, pi_init, mu_init, sigma_init):
+from image import Image
+# sd = 1
+# np.random.seed(sd)
+# random.seed(sd)
+
+class GaussianMixtureModel():
+	def __init__(self, img, K,verbose=False):
+		self.verbose = verbose
 		self.data = img
 		self.K = K
 		self.pi = np.array([1.0/K] * K)
 		self.mu = np.random.rand(K,3)
 		self.sigma = [np.eye(3)*random.uniform(1,2)]*K
 
-	# def init_labels_params(self):
-	# self.labels = np.zeros(self.data.shape)
-	# pdb.set_trace()
-	# for i in range(self.labels.size):
-	# 	self.labels[i] = randint(0, self.K - 1);
-	# self.pi = np.tile(0.0, self.K)
-	# self.mu = [np.array([0.0, 0, 0]) for i in range(self.K)]  # row vectors...
-	# self.sigma = [np.matrix([[1, 0.0, 0], [0, 1.0, 0], [0, 0.0, 1]]) for i in range(K)]
-	# @profile
 	def E_step(self, pi_old, mu_old, sigma_old):
-		# pdb.set_trace()
 		normals = [stats.multivariate_normal(mean=mu_old[i], cov=sigma_old[i]) for i in range(self.K)]
 		gamma_z = np.zeros([self.data.height, self.data.width,self.K])
 		for i in range(self.data.height):
 			for j in range(self.data.width):
-				# gamma_denom = 0.0
-				# for k in range(self.K):
-					# pdb.set_trace()
-					# gamma_denom += pi_old[k] * normals[k].pdf(x=self.data[i, j])  # ignore alpha channel
 				for l in range(self.K):
-					gamma_z[i, j, l] = pi_old[l] * normals[l].pdf(x=self.data[i, j]) # / gamma_denom
+					gamma_z[i, j, l] = pi_old[l] * normals[l].pdf(x=self.data[i, j])
 				gamma_denom = gamma_z[i, j, :].sum(axis=0)
 				gamma_z[i, j, :] = gamma_z[i, j, :] / gamma_denom
 		return gamma_z
@@ -51,28 +33,25 @@ class GaussianMixtureModel(object):
 	def M_step(self, gamma_z):
 		# estimate pi
 		N = np.zeros(self.K)
-		for i in range(self.data.height):  # TODO:vectorize
+		for i in range(self.data.height):  
 			for j in range(self.data.width):
 				for k in range(self.K):
 					N[k] += gamma_z[i, j, k]
-		# print(gamma_z)
 		pi_new = N / (self.data.height*self.data.width)
 
 		# estimate mu
 		mu_new = [np.array([0.0, 0, 0]) for _ in range(self.K)]
-		for i in range(self.data.height):  # TODO:vectorize
+		for i in range(self.data.height):  
 			for j in range(self.data.width):
 				for k in range(self.K):
-					# pdb.set_trace()
 					mu_new[k] += gamma_z[i, j, k] * self.data[i, j] / N[k]
 
+		# estimate sigma
 		sigma_new = [[0.0,0,0] for _ in range(self.K)]
-		for i in range(self.data.height):  # TODO:vectorize
+		for i in range(self.data.height):  
 			for j in range(self.data.width):
 				diffs = [np.matrix(self.data[i, j] - mu_new[k]) for k in range(self.K)]
 				for k in range(self.K):
-					# print(sigma_new)
-					# sigma_new[k] += gamma_z[i, j, k] * diffs[k].T * (diffs[k]) / N[k]
 					sigma_new[k][0] += gamma_z[i, j, k] * (diffs[k].item(0) ** 2) / N[k]
 					sigma_new[k][1] += gamma_z[i, j, k] * (diffs[k].item(1) ** 2) / N[k]
 					sigma_new[k][2] += gamma_z[i, j, k] * (diffs[k].item(2) ** 2) / N[k]
@@ -82,7 +61,7 @@ class GaussianMixtureModel(object):
 	def likelihood(self,pi,mu,sigma):
 		total = 0;
 		normals = [stats.multivariate_normal(mean=mu[i], cov=sigma[i]) for i in range(self.K)]
-		for i in range(self.data.height):#TODO:vectorize
+		for i in range(self.data.height):
 			for j in range(self.data.width):
 				diffs = [np.matrix(self.data[i, j, 0:3] - mu[k]) for k in range(self.K)]
 				log_arg = 0
@@ -90,8 +69,8 @@ class GaussianMixtureModel(object):
 					log_arg+= pi[k]*normals[k].pdf(self.data[i,j])
 				total += math.log(log_arg)
 		return total
-	#@profile
-	def estimate_parameters(self, max_iter):
+
+	def estimate_parameters(self, max_iter=200):
 		i = 0
 		thresh = 0.005
 		pi_est = self.pi
@@ -99,26 +78,23 @@ class GaussianMixtureModel(object):
 		sigma_est = self.sigma
 		delta_ELBO = 999
 		while i < max_iter and delta_ELBO > thresh:
-			print(i)
+			if self.verbose: print('counter',i)
 			old_ELBO = self.likelihood(pi_est, mu_est, sigma_est)
-			# print(pi_est)
-			# print(mu_est)
-			# print(sigma_est)
 			gamma_z = self.E_step(pi_est, mu_est, sigma_est)
-			# pdb.set_trace()
 			[pi_est, mu_est, sigma_est] = self.M_step(gamma_z)
 			new_ELBO = self.likelihood(pi_est, mu_est, sigma_est)
 			delta_ELBO = math.fabs(old_ELBO-new_ELBO)
-			print(delta_ELBO)
+			if self.verbose: print('delta ELBO',delta_ELBO)
 			i += 1
-		### PLEASE DON'T LEAVE THIS IN###
-		# temp = np.copy(sigma_est[0][0])
-		# sigma_est[0][0] = np.copy(sigma_est[0][1])
-		# sigma_est[0][1] = temp
+		
 		return [pi_est, mu_est, sigma_est]
 
 if __name__ == '__main__':   
     #### Main Code ####
+    import matplotlib.pyplot as plt
+    import matplotlib.image as mpimg
+    from sklearn.mixture import GaussianMixture
+
     NN = 30
     K = 2
     # m = [0,0]
